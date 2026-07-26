@@ -1,0 +1,166 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #000000;
+  --bg2: #060607;
+  --panel: rgba(255, 255, 255, 0.04);
+  --panel2: rgba(255, 255, 255, 0.07);
+  --line: rgba(255, 255, 255, 0.1);
+  --line2: rgba(255, 255, 255, 0.18);
+  --text: #ffffff;
+  --muted: rgba(255, 255, 255, 0.55);
+  --faint: rgba(255, 255, 255, 0.32);
+  --glow: rgba(255, 255, 255, 0.55);
+  --ok: #b6ffb0;
+  --bad: #ffb0b0;
+  --grid-op: 0.05;
+}
+
+[data-theme="light"] {
+  --bg: #f4f4f2;
+  --bg2: #ececea;
+  --panel: rgba(0, 0, 0, 0.035);
+  --panel2: rgba(0, 0, 0, 0.06);
+  --line: rgba(0, 0, 0, 0.12);
+  --line2: rgba(0, 0, 0, 0.22);
+  --text: #0a0a0a;
+  --muted: rgba(0, 0, 0, 0.6);
+  --faint: rgba(0, 0, 0, 0.38);
+  --glow: rgba(0, 0, 0, 0.4);
+  --ok: #1c7c1c;
+  --bad: #a32020;
+  --grid-op: 0.06;
+}
+
+* { border-color: var(--line); }
+html { scrollbar-color: var(--line2) transparent; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Space Grotesk", ui-sans-serif, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+.font-mono2 { font-family: "JetBrains Mono", ui-monospace, monospace; }
+
+/* ---------- animated digital grid ---------- */
+.grid-bg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 44px 44px;
+  opacity: var(--grid-op);
+  animation: gridMove 26s linear infinite;
+  will-change: background-position;
+}
+.grid-bg::after {
+  content: ""; position: absolute; inset: 0;
+  background:
+    radial-gradient(900px 500px at 80% -10%, var(--panel2), transparent 60%),
+    radial-gradient(700px 500px at 10% 110%, var(--panel2), transparent 60%);
+}
+@keyframes gridMove {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 0 44px, 44px 0; }
+}
+.scanline {
+  position: fixed; left: 0; right: 0; height: 120px; z-index: 0; pointer-events: none;
+  background: linear-gradient(180deg, transparent, var(--panel), transparent);
+  animation: scan 9s ease-in-out infinite;
+  opacity: 0.5;
+}
+@keyframes scan { 0%, 100% { top: -15%; } 50% { top: 105%; } }
+
+/* ---------- glass panels ---------- */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 14px;
+}
+.panel-hover { transition: border-color 0.2s, background 0.2s, transform 0.2s; }
+.panel-hover:hover { border-color: var(--line2); background: var(--panel2); }
+
+.neon { box-shadow: 0 0 0 1px var(--line2), 0 0 24px -6px var(--glow), inset 0 0 18px -12px var(--glow); }
+.text-glow { text-shadow: 0 0 18px var(--glow), 0 0 42px var(--glow); }
+
+/* ---------- controls ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 1px solid var(--line2); border-radius: 10px; padding: 9px 16px;
+  font-size: 13.5px; font-weight: 600; letter-spacing: 0.01em;
+  background: var(--panel); color: var(--text); cursor: pointer; white-space: nowrap;
+  transition: transform 0.12s ease, box-shadow 0.2s, background 0.2s, border-color 0.2s;
+  user-select: none;
+}
+.btn:hover { background: var(--panel2); border-color: var(--line2); }
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+.btn-primary {
+  background: var(--text); color: var(--bg); border-color: var(--text);
+  box-shadow: 0 0 26px -8px var(--glow);
+}
+.btn-primary:hover { background: var(--text); filter: brightness(0.92); }
+.btn-danger { border-color: rgba(255, 90, 90, 0.4); color: var(--bad); }
+.btn-xs { padding: 5px 10px; font-size: 12px; border-radius: 8px; }
+
+.input {
+  width: 100%; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 10px; padding: 10px 14px; font-size: 14px; color: var(--text);
+  outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.input::placeholder { color: var(--faint); }
+.input:focus { border-color: var(--line2); box-shadow: 0 0 0 3px var(--panel2), 0 0 18px -8px var(--glow); }
+select.input option { background: var(--bg2); color: var(--text); }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+  border: 1px solid var(--line); border-radius: 999px; font-size: 11.5px;
+  color: var(--muted); background: var(--panel); white-space: nowrap;
+}
+
+/* ---------- chat bubbles ---------- */
+.bubble { max-width: 78%; padding: 8px 12px; border-radius: 14px; font-size: 14px; line-height: 1.45; position: relative; word-break: break-word; }
+.bubble-in { background: var(--panel2); border: 1px solid var(--line); border-bottom-left-radius: 5px; }
+.bubble-out { background: var(--text); color: var(--bg); border-bottom-right-radius: 5px; box-shadow: 0 0 22px -10px var(--glow); }
+[data-theme="light"] .bubble-out { background: #111; color: #fff; }
+
+/* ---------- misc ---------- */
+.fade-up { animation: fadeUp 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+.blink { animation: blink 1.6s ease-in-out infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+.pulse-dot { position: relative; }
+.pulse-dot::after {
+  content: ""; position: absolute; inset: -3px; border-radius: 999px;
+  border: 1px solid currentColor; opacity: 0.5; animation: pulseRing 1.8s ease-out infinite;
+}
+@keyframes pulseRing { from { transform: scale(0.7); opacity: 0.6; } to { transform: scale(1.7); opacity: 0; } }
+
+.glitch { position: relative; }
+.glitch::before, .glitch::after {
+  content: attr(data-text); position: absolute; inset: 0; overflow: hidden;
+}
+.glitch::before { color: var(--text); clip-path: inset(0 0 55% 0); animation: glitchA 2.4s steps(2) infinite; opacity: 0.5; }
+.glitch::after { color: var(--text); clip-path: inset(55% 0 0 0); animation: glitchB 2.1s steps(2) infinite; opacity: 0.5; }
+@keyframes glitchA { 0%, 92% { transform: none; } 94% { transform: translate(2px, -1px); } 97% { transform: translate(-2px, 1px); } }
+@keyframes glitchB { 0%, 90% { transform: none; } 93% { transform: translate(-2px, 1px); } 96% { transform: translate(2px, -1px); } }
+
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 8px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-track { background: transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  .grid-bg, .scanline, .glitch::before, .glitch::after { animation: none; }
+}
+
+/* Cegah iOS/Android auto-zoom + keyboard tertutup saat fokus input (font < 16px memicu zoom) */
+@media (max-width: 768px) {
+  .input, textarea.input, select.input { font-size: 16px !important; }
+  input, textarea, select { font-size: 16px; }
+}
