@@ -2,6 +2,6 @@
   "dialect": "postgresql",
   "schema": "./src/db/schema.ts",
   "dbCredentials": {
-    "url": "postgresql://postgres:postgres@127.0.0.1:5432/app_db"
+    "url": "postgresql://neondb_owner:npg_rk5taEM8wyDb@ep-quiet-paper-axl8ppcd-pooler.c-4.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
   }
 }
