@@ -803,6 +803,7 @@ const DL_HOSTS = [
   "https://dl.kermi.top",
   "https://co.otomir23.me",
   "https://downloadkuv01.vercel.app",
+  "https://cobalt-api.meowing.de/",
 ];
 type DlResult = { type: "video" | "audio" | "photo"; url: string };
 
