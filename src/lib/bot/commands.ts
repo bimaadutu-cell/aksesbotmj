@@ -804,6 +804,9 @@ const DL_HOSTS = [
   "https://co.otomir23.me",
   "https://downloadkuv01.vercel.app",
   "https://cobalt-api.meowing.de/",
+  "https://downloadapi.stuff.solutions",
+  "https://kityune.imput.net",
+  "https://cobalt-backend.canine.tools",
 ];
 type DlResult = { type: "video" | "audio" | "photo"; url: string };
 
