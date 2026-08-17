@@ -93,7 +93,7 @@ async function startWhatsApp() {
       g.__aksesbotmuWaSocket = null;
 
       if (code !== DisconnectReason.loggedOut && code !== DisconnectReason.forbidden) {
-        setTimeout(() => startWhatsApp().catch(() => {}), 2500);
+        setTimeout(() => startWhatsApp().catch(() => {}), 3000);
       }
       waBus.emit("status", { ...status });
     }
@@ -142,12 +142,12 @@ async function handleWhatsAppText(sock: WASocket, jid: string, text: string, msg
   if (command === "menu" || command === "start") {
     await sock.sendMessage(jid, {
       text:
-        "⚡ AKSESBOTMU\\n\\n" +
-        "🤖 AI — chat & bantuan\\n" +
-        "🖼️ Stiker — /brat <teks>\\n" +
-        "🔎 Search — /google <teks>\\n" +
-        "📚 Wiki — /wiki <teks>\\n" +
-        "⛩️ Anime — /anime <judul>\\n\\n" +
+        "⚡ AKSESBOTMU (Baileys 6.7.18)\n\n" +
+        "🤖 AI — chat & bantuan\n" +
+        "🖼️ Stiker — /brat <teks>\n" +
+        "🔎 Search — /google <teks>\n" +
+        "📚 Wiki — /wiki <teks>\n" +
+        "⛩️ Anime — /anime <judul>\n\n" +
         "Ketik /help untuk bantuan."
     });
     return;
@@ -155,7 +155,7 @@ async function handleWhatsAppText(sock: WASocket, jid: string, text: string, msg
 
   if (command === "google") {
     const q = encodeURIComponent(args);
-    await sock.sendMessage(jid, { text: `🔎 Hasil pencarian:\\nhttps://www.google.com/search?q=${q}` });
+    await sock.sendMessage(jid, { text: `🔎 Hasil pencarian:\nhttps://www.google.com/search?q=${q}` });
     return;
   }
 
@@ -165,7 +165,7 @@ async function handleWhatsAppText(sock: WASocket, jid: string, text: string, msg
     try {
       const r = await fetch(`https://id.wikipedia.org/api/rest_v1/page/summary/${slug}`, { signal: AbortSignal.timeout(9000) });
       const d: any = await r.json();
-      await sock.sendMessage(jid, { text: `📚 ${d.title || args}\\n\\n${(d.extract || d.description || "Tidak ditemukan.").slice(0, 1800)}` });
+      await sock.sendMessage(jid, { text: `📚 ${d.title || args}\n\n${(d.extract || d.description || "Tidak ditemukan.").slice(0, 1800)}` });
     } catch {
       await sock.sendMessage(jid, { text: "❌ Wikipedia sedang tidak tersedia." });
     }
@@ -179,7 +179,7 @@ async function handleWhatsAppText(sock: WASocket, jid: string, text: string, msg
       const d: any = await r.json();
       const a = d?.data?.[0];
       if (!a) return void sock.sendMessage(jid, { text: `❌ Anime "${args}" tidak ditemukan.` });
-      const cap = `⛩️ ${a.title}\\n⭐ ${a.score ?? "-"} · ${a.episodes ?? "?"} episode · ${a.status}\\n\\n${(a.synopsis || "Belum ada sinopsis.").slice(0, 1200)}`;
+      const cap = `⛩️ ${a.title}\n⭐ ${a.score ?? "-"} · ${a.episodes ?? "?"} episode · ${a.status}\n\n${(a.synopsis || "Belum ada sinopsis.").slice(0, 1200)}`;
       if (a.images?.jpg?.image_url) {
         await sock.sendMessage(jid, { image: { url: a.images.jpg.image_url }, caption: cap });
       } else {
@@ -229,7 +229,9 @@ export async function requestWhatsAppPairingCode(phone: string) {
   const sock = await startWhatsApp();
   if (status.connected) throw new Error("WhatsApp sudah terhubung.");
 
-  // Baileys pairing-code flow uses the real WhatsApp pairing endpoint.
+  // Tunggu sejenak agar socket siap menerima pairing code request
+  await new Promise(res => setTimeout(res, 1500));
+
   const code = await sock.requestPairingCode(number);
   status.phone = number;
   status.pairingCode = code;
