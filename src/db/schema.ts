@@ -10,7 +10,32 @@ import {
   real,
 } from "drizzle-orm/pg-core";
 
-/** Single row (id=1): the connected bot + admin configuration */
+/** Tabel sesi bot untuk multi-user / multi-session tanpa batas */
+export const botSessions = pgTable("bot_sessions", {
+  id: serial("id").primaryKey(),
+  sessionKey: text("session_key").notNull().unique(), // e.g. uuid or custom unique name
+  ownerName: text("owner_name").default("Admin"),
+  
+  // Telegram Session
+  telegramTokenEnc: text("telegram_token_enc"),
+  telegramBotId: text("telegram_bot_id"),
+  telegramBotName: text("telegram_bot_name"),
+  telegramBotUsername: text("telegram_bot_username"),
+  telegramActive: boolean("telegram_active").default(false),
+
+  // WhatsApp Session (Baileys 6.7.18)
+  whatsappSessionId: text("whatsapp_session_id").notNull(), // folder name / id for baileys auth
+  whatsappPhone: text("whatsapp_phone"),
+  whatsappJid: text("whatsapp_jid"),
+  whatsappConnected: boolean("whatsapp_connected").default(false),
+  whatsappPairingCode: text("whatsapp_pairing_code"),
+
+  settings: jsonb("settings").$type<BotSettings>().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+/** Single row (id=1): legacy global config fallback */
 export const botConfig = pgTable("bot_config", {
   id: integer("id").primaryKey().default(1),
   tokenEnc: text("token_enc"),
@@ -19,7 +44,7 @@ export const botConfig = pgTable("bot_config", {
   botUsername: text("bot_username"),
   botPhotoPath: text("bot_photo_path"),
   description: text("description"),
-  mode: text("mode").default("polling"), // polling | webhook
+  mode: text("mode").default("polling"),
   webhookUrl: text("webhook_url"),
   active: boolean("active").default(false),
   connectedAt: timestamp("connected_at", { withTimezone: true }),
@@ -53,7 +78,7 @@ export interface BotSettings {
   reportTarget?: string;
 }
 
-/** Telegram users that have interacted with the bot */
+/** Telegram users */
 export const tgUsers = pgTable("tg_users", {
   tgId: text("tg_id").primaryKey(),
   firstName: text("first_name"),
@@ -75,14 +100,14 @@ export const tgUsers = pgTable("tg_users", {
   lastSeen: timestamp("last_seen", { withTimezone: true }).defaultNow(),
 });
 
-/** Every message (incoming from users, outgoing from bot) */
+/** Messages */
 export const messages = pgTable("messages", {
   id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
   chatId: text("chat_id").notNull(),
   userId: text("user_id"),
   tgMessageId: integer("tg_message_id"),
   direction: text("direction").notNull(), // in | out
-  kind: text("kind").default("text"), // text photo sticker video voice audio document location contact poll gif
+  kind: text("kind").default("text"),
   text: text("text"),
   caption: text("caption"),
   replyTo: integer("reply_to"),
