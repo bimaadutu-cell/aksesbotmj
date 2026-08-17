@@ -128,8 +128,24 @@ function consumePending(userId: string, chatId: string, text: string): { hit: bo
    bebas error di Vercel/serverless (tanpa file font eksternal). */
 const escXml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 async function makeBrat(text: string): Promise<Buffer> {
-  const { makeBratSticker } = await import("@/lib/sticker/brat");
-  return makeBratSticker(text);
+  const t = text.toLowerCase().replace(/\s+/g, " ").trim().slice(0, 160) || "brat";
+  const words = t.split(" ");
+  const lines: string[] = [];
+  let cur = "";
+  for (const w of words) {
+    const test = cur ? `${cur} ${w}` : w;
+    if (test.length > 17 && cur) { lines.push(cur); cur = w; }
+    else cur = test;
+  }
+  if (cur) lines.push(cur);
+  const fin = lines.slice(0, 7);
+  const lh = 62;
+  const startY = 256 - ((fin.length - 1) * lh) / 2 + 20;
+  const textSvg = fin.map((l, i) =>
+    `<text x="256" y="${startY + i * lh}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="600" fill="#000000" letter-spacing="1">${escXml(l)}</text>`
+  ).join("");
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><rect width="512" height="512" fill="#ffffff"/>${textSvg}</svg>`;
+  return sharp(Buffer.from(svg)).blur(0.6).png().toBuffer();
 }
 
 async function photoToSticker(fileUrlSrc: string): Promise<Buffer> {
@@ -452,8 +468,8 @@ reg(["brat"], async (c, args) => {
   if (!args) return reply(c, "❗ Contoh: /brat halo semua");
   try {
     await tg.sendChatAction(c.token, c.chatId, "upload_photo");
-    const buf = await makeBrat(args); // 512x512 WEBP — format static sticker yang benar
-    const r = await tg.sendFile(c.token, "sendSticker", { chat_id: c.chatId }, "sticker", "brat.webp", buf, "image/webp");
+    const buf = await makeBrat(args); // 512x512 PNG — valid untuk stiker Telegram
+    const r = await tg.sendFile(c.token, "sendSticker", { chat_id: c.chatId }, "sticker", "brat.png", buf, "image/png");
     if (r.ok) {
       const row = await insertMessage({ chatId: c.chatId, userId: c.chatId, tgMessageId: r.result?.message_id, direction: "out", kind: "sticker", text: `brat: ${args.slice(0, 80)}`, meta: { brat: true } });
       if (row) bus.emit("message", row);
@@ -465,7 +481,7 @@ reg(["brat"], async (c, args) => {
     // fallback anti-error: kirim sebagai foto brat
     try {
       const buf = await makeBrat(args);
-      await sendBytes(c.chatId, "sendPhoto", "photo", "brat.webp", buf, "image/webp", "photo", `brat: ${args.slice(0, 80)}`);
+      await sendBytes(c.chatId, "sendPhoto", "photo", "brat.png", buf, "image/png", "photo", `brat: ${args.slice(0, 80)}`);
     } catch { await reply(c, "❌ Gagal membuat brat, coba teks lebih pendek."); }
   }
 });
