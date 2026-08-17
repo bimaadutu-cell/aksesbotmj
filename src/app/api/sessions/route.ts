@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { db } from "@/db";
+import { db, ensureTablesExist } from "@/db";
 import { botSessions } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { startWhatsAppSession, requestWAPairingCode, disconnectWASession, getWAStatus, startTelegramPollingForSession, stopTelegramPollingForSession } from "@/lib/multi-session";
+import { startWhatsAppSession, requestWAPairingCode, disconnectWASession, getWAStatus, startTelegramPollingForSession } from "@/lib/multi-session";
 
 export async function GET(req: Request) {
+  await ensureTablesExist();
   const url = new URL(req.url);
   const sessionId = url.searchParams.get("sessionId");
 
@@ -17,36 +18,35 @@ export async function GET(req: Request) {
     const allSessions = await db.select().from(botSessions);
     return NextResponse.json({ ok: true, sessions: allSessions });
   } catch (e: any) {
-    // Fallback jika tabel belum termigrasi
     return NextResponse.json({ ok: true, sessions: [] });
   }
 }
 
 export async function POST(req: Request) {
+  await ensureTablesExist();
   try {
     const body = await req.json();
     const { action, sessionId, ownerName, telegramToken, phone } = body;
 
-    const sKey = sessionId || `user-${Math.random().toString(36).substring(2, 9)}`;
+    const sKey = sessionId?.trim() || `session-${Math.random().toString(36).substring(2, 8)}`;
 
     if (action === "create" || action === "update") {
-      // Cek apakah sesi sudah ada
-      const existing = await db.select().from(botSessions).where(eq(botSessions.sessionKey, sKey));
-      
       let botInfo: any = {};
       if (telegramToken) {
-        const r = await fetch(`https://api.telegram.org/bot${telegramToken}/getMe`);
+        const r = await fetch(`https://api.telegram.org/bot${telegramToken.trim()}/getMe`);
         const d: any = await r.json();
         if (!d.ok) return NextResponse.json({ ok: false, error: "Token Telegram tidak valid." }, { status: 400 });
         botInfo = d.result;
-        startTelegramPollingForSession(sKey, telegramToken);
+        startTelegramPollingForSession(sKey, telegramToken.trim());
       }
+
+      const existing = await db.select().from(botSessions).where(eq(botSessions.sessionKey, sKey));
 
       if (existing.length === 0) {
         await db.insert(botSessions).values({
           sessionKey: sKey,
           ownerName: ownerName || "User Bot",
-          telegramTokenEnc: telegramToken || null,
+          telegramTokenEnc: telegramToken?.trim() || null,
           telegramBotId: botInfo.id ? String(botInfo.id) : null,
           telegramBotName: botInfo.first_name || null,
           telegramBotUsername: botInfo.username || null,
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
       } else {
         await db.update(botSessions).set({
           ownerName: ownerName || existing[0].ownerName,
-          telegramTokenEnc: telegramToken || existing[0].telegramTokenEnc,
+          telegramTokenEnc: telegramToken?.trim() || existing[0].telegramTokenEnc,
           telegramBotId: botInfo.id ? String(botInfo.id) : existing[0].telegramBotId,
           telegramBotName: botInfo.first_name || existing[0].telegramBotName,
           telegramBotUsername: botInfo.username || existing[0].telegramBotUsername,

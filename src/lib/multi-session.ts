@@ -50,8 +50,6 @@ function normalizePhone(value: string) {
   return String(value || "").replace(/[^\d]/g, "").replace(/^00/, "");
 }
 
-/* ==================== WHATSAPP BAILEYS 6.7.18 MULTI-SESSION ==================== */
-
 const AUTH_ROOT = path.resolve(process.env.WA_AUTH_DIR || "./data/whatsapp-sessions");
 
 export async function startWhatsAppSession(sessionId: string) {
@@ -70,11 +68,12 @@ export async function startWhatsAppSession(sessionId: string) {
   const sock = makeWASocket({
     version,
     auth: state,
-    browser: Browsers.ubuntu(`AKSESBOTMU-${sessionId}`),
+    browser: Browsers.macOS("Chrome"), // Standard stable browser profile for Baileys
     printQRInTerminal: false,
     logger,
     markOnlineOnConnect: false,
     generateHighQualityLinkPreview: false,
+    syncFullHistory: false,
   });
 
   sock.ev.on("creds.update", saveCreds);
@@ -148,14 +147,19 @@ export async function requestWAPairingCode(sessionId: string, phone: string) {
   const sock = await startWhatsAppSession(sessionId);
   if (store.waStatus.connected) throw new Error("WhatsApp sudah terhubung.");
 
-  await new Promise(res => setTimeout(res, 1500));
-  const code = await sock.requestPairingCode(number);
-  store.waStatus.phone = number;
-  store.waStatus.pairingCode = code;
-  store.waStatus.qr = null;
-  store.waStatus.qrDataUrl = null;
-  sessionBus.emit(`wa-status:${sessionId}`, { ...store.waStatus });
-  return code;
+  // Tunggu socket siap
+  if (!sock.authState.creds.registered) {
+    await new Promise(res => setTimeout(res, 2000));
+    const code = await sock.requestPairingCode(number);
+    store.waStatus.phone = number;
+    store.waStatus.pairingCode = code;
+    store.waStatus.qr = null;
+    store.waStatus.qrDataUrl = null;
+    sessionBus.emit(`wa-status:${sessionId}`, { ...store.waStatus });
+    return code;
+  } else {
+    throw new Error("Sesi ini sudah terdaftar. Lakukan logout terlebih dahulu.");
+  }
 }
 
 export async function disconnectWASession(sessionId: string, logout = false) {
@@ -261,8 +265,6 @@ async function handleWhatsAppMessage(sock: WASocket, jid: string, text: string, 
     } catch {}
   }
 }
-
-/* ==================== TELEGRAM MULTI-SESSION POLLING ==================== */
 
 export async function startTelegramPollingForSession(sessionId: string, token: string) {
   const store = getSessionStore(sessionId);
